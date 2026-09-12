@@ -1,0 +1,78 @@
+.login-trigger.login-desktop { position: absolute; left: 77.4%; top: 18%; width: 5.2%; height: 64%; min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 0; background: #fff; color: #444546; font: 500 16px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.login-trigger:hover { color: #99815a; }
+.login-trigger:focus-visible { outline: 2px solid #99815a; outline-offset: 2px; }
+.login-trigger.login-mobile { flex: 0 0 36px; width: 36px; height: 40px; min-width: 36px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 4px; background: transparent; cursor: pointer; }
+.login-mobile img { display: block; width: 22px; height: 22px; }
+html.hengli-login-open { overflow: hidden; scrollbar-gutter: stable; }
+#hengli-login { box-sizing: border-box; width: min(480px, calc(100% - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; border: 1px solid #e6e3db; border-radius: 8px; overflow: auto; overscroll-behavior: contain; color: #303133; background: #fff; box-shadow: 0 24px 90px #14151728; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+#hengli-login::backdrop { background: #23242680; backdrop-filter: blur(2px); }
+#hengli-login *, #hengli-login *::before, #hengli-login *::after { box-sizing: border-box; }
+#hengli-login [hidden] { display: none !important; }
+#hengli-login button, #hengli-login input, #hengli-login select { font: inherit; letter-spacing: 0; }
+#hengli-login button { display: inline-flex; align-items: center; justify-content: center; height: auto; min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 4px; color: #444546; background: transparent; cursor: pointer; text-align: center; }
+#hengli-login button:disabled { cursor: default; }
+#hengli-login :is(button, input, select):focus-visible { outline: 2px solid #aa9267; outline-offset: 3px; }
+#hengli-login .auth-top { display: flex; align-items: center; justify-content: space-between; padding: 22px 28px 10px 36px; border-top: 2px solid #b6a27e; background: linear-gradient(135deg, transparent 76%, #aa92670c 76.2%, transparent 76.6%), linear-gradient(135deg, transparent 83%, #aa926713 83.2%, transparent 83.6%), #fff; }
+#hengli-login .auth-brand { display: flex; align-items: center; gap: 10px; color: #494a49; font-size: 20px; font-weight: 600; }
+#hengli-login .auth-brand::before { content: ""; width: 3px; height: 19px; background: #a68d60; }
+#hengli-login .auth-icon-button { width: 36px; height: 36px; flex: 0 0 36px; }
+#hengli-login .auth-icon-button:hover { background: #f4f3ef; }
+#hengli-login img { display: block; width: 20px; height: 20px; flex: 0 0 20px; }
+#hengli-login .auth-body { padding: 10px 36px 28px; }
+#hengli-login h2 { margin: 0; color: #303133; font-size: 28px; font-weight: 600; line-height: 1.4; }
+#hengli-login .auth-subtitle { margin: 10px 0 20px; color: #83847f; font-size: 14px; line-height: 1.6; }
+#hengli-login .auth-tabs { display: flex; gap: 32px; margin-bottom: 25px; border-bottom: 1px solid #e9e9e5; }
+#hengli-login .auth-tabs button { position: relative; height: 44px; padding-bottom: 13px; border-radius: 0; font-size: 16px; color: #90918b; }
+#hengli-login .auth-tabs [aria-selected="true"] { color: #363735; font-weight: 600; }
+#hengli-login .auth-tabs [aria-selected="true"]::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #a48b5e; }
+#hengli-login .auth-label { display: block; margin: 0 0 9px; color: #565853; font-size: 13px; }
+#hengli-login .auth-field { display: flex; align-items: center; height: 54px; border: 1px solid #deded8; border-radius: 5px; background: #fff; transition: border-color .15s; }
+#hengli-login .auth-field:focus-within { border-color: #a58e67; box-shadow: 0 0 0 3px #bca57612; }
+#hengli-login .auth-field:has([aria-invalid="true"]) { border-color: #b55848; }
+#hengli-login .auth-field input { width: 100%; min-width: 0; height: 100%; padding: 0 15px; border: 0; border-radius: 5px; background: transparent; color: #303133; font-size: 16px; outline: none; }
+#hengli-login .auth-field input::placeholder { color: #afb0aa; }
+#hengli-login .auth-field input:focus-visible { outline: none; }
+#hengli-login .auth-region-wrap { position: relative; width: 91px; flex: 0 0 91px; height: 30px; border-right: 1px solid #e5e5e0; display: flex; align-items: center; padding-left: 14px; font-size: 15px; }
+#hengli-login .auth-region-wrap img { position: absolute; right: 7px; width: 15px; height: 15px; }
+#hengli-login .auth-field select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+#hengli-login .auth-region-wrap:has(select:focus-visible) { outline: 2px solid #aa9267; outline-offset: 2px; }
+#hengli-login .auth-field .auth-icon-button { margin-right: 7px; }
+#hengli-login .auth-error { min-height: 18px; margin: 4px 0 6px; color: #a6493e; font-size: 12px; line-height: 1.5; }
+#hengli-login #auth-send-code { flex: 0 0 120px; height: 26px; padding: 0 9px; border-left: 1px solid #e5e5e0; border-radius: 0; color: #957a4c; font-size: 13px; white-space: nowrap; }
+#hengli-login #auth-send-code:disabled { color: #adaea8; }
+#hengli-login .auth-password-links { display: flex; justify-content: flex-end; min-height: 24px; margin: -4px 0 4px; }
+#hengli-login #auth-forgot, #hengli-login #auth-back { min-height: 24px; color: #8d7651; font-size: 13px; }
+#hengli-login #auth-back { gap: 6px; margin: 0 0 18px; }
+#hengli-login #auth-back img { width: 16px; height: 16px; flex-basis: 16px; }
+#hengli-login .auth-feedback { min-height: 20px; margin: 0 0 10px; color: #8c7856; font-size: 12px; line-height: 1.7; }
+#hengli-login .auth-primary { width: 100%; min-height: 50px; padding: 10px 16px; color: #fff; background: #333537; border: 1px solid #333537; border-radius: 5px; font-size: 16px; font-weight: 500; }
+#hengli-login .auth-primary:hover { background: #464744; }
+#hengli-login .auth-primary:disabled { background: #e9e9e5; color: #a2a39c; border-color: #e9e9e5; }
+#hengli-login .auth-preview-note { margin: 16px 0 0; text-align: center; color: #97998f; font-size: 11px; line-height: 1.7; }
+#hengli-login .auth-footer { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #edede8; font-size: 12px; color: #8f9188; }
+#hengli-login .auth-footer img { width: 15px; height: 15px; flex-basis: 15px; opacity: .65; }
+#hengli-login .auth-success { padding: 30px 0 0; text-align: center; }
+#hengli-login .auth-success-icon { display: flex; align-items: center; justify-content: center; width: 58px; height: 58px; border-radius: 50%; margin: 0 auto 22px; background: #f0ece3; }
+#hengli-login .auth-success-icon img { width: 26px; height: 26px; }
+#hengli-login .auth-success h3 { margin: 0 0 12px; font-size: 23px; font-weight: 600; }
+#hengli-login .auth-success p { margin: 0 auto 28px; color: #7c8075; font-size: 14px; line-height: 1.8; }
+@media (max-width: 980px) {
+  .login-trigger.login-desktop { display: none; }
+  header .mobile-head, header .mobile-nav { gap: 12px; }
+}
+@media (max-width: 540px) {
+  header .mobile-head, header .mobile-nav { flex-wrap: wrap; gap: 2px 12px; padding-top: 10px; padding-bottom: 6px; }
+  header .mobile-head nav, header .mobile-nav nav { order: 3; flex: 0 0 100%; min-height: 34px; justify-content: center; align-items: center; gap: 28px; font-size: 13px; }
+  .login-trigger.login-mobile { margin-left: auto; }
+  #hengli-login { width: calc(100% - 24px); max-height: calc(100dvh - 24px); }
+  #hengli-login .auth-top { padding: 19px 18px 14px 24px; }
+  #hengli-login .auth-body { padding: 8px 24px 25px; }
+  #hengli-login h2 { font-size: 25px; }
+  #hengli-login .auth-subtitle { margin-bottom: 21px; font-size: 13px; }
+  #hengli-login .auth-tabs { margin-bottom: 20px; gap: 26px; }
+  #hengli-login .auth-field { height: 52px; }
+  #hengli-login .auth-region-wrap { flex-basis: 80px; width: 80px; padding-left: 10px; }
+  #hengli-login #auth-send-code { flex-basis: 106px; padding: 0 6px; font-size: 12px; }
+  #hengli-login .auth-field input { padding-left: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { #hengli-login .auth-field { transition: none; } }
