@@ -20,12 +20,13 @@
         <p class="auth-error" id="auth-phone-error" aria-live="polite"></p>
         <div id="auth-code-group"><label for="auth-code" class="auth-label">短信验证码</label><div class="auth-field"><input id="auth-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6位验证码" aria-describedby="auth-code-error"><button id="auth-send-code" type="button" disabled>获取验证码</button></div><p class="auth-error" id="auth-code-error" aria-live="polite"></p></div>
         <div id="auth-password-group" hidden><label for="auth-password" class="auth-label" id="auth-password-label">登录密码</label><div class="auth-field"><input id="auth-password" type="password" autocomplete="current-password" maxlength="64" placeholder="请输入登录密码" aria-describedby="auth-password-error"><button class="auth-icon-button" id="auth-toggle-password" type="button" title="显示密码" aria-label="显示密码" aria-pressed="false">${icon('eye')}</button></div><p class="auth-error" id="auth-password-error" aria-live="polite"></p></div>
-        <div id="auth-confirm-group" hidden><label for="auth-confirm" class="auth-label">确认新密码</label><div class="auth-field"><input id="auth-confirm" type="password" autocomplete="new-password" maxlength="32" placeholder="再次输入新密码" aria-describedby="auth-confirm-error"></div><p class="auth-error" id="auth-confirm-error" aria-live="polite"></p></div>
+        <div id="auth-confirm-group" hidden><label for="auth-confirm" class="auth-label" id="auth-confirm-label">确认新密码</label><div class="auth-field"><input id="auth-confirm" type="password" autocomplete="new-password" maxlength="32" placeholder="再次输入新密码" aria-describedby="auth-confirm-error"></div><p class="auth-error" id="auth-confirm-error" aria-live="polite"></p></div>
         <div class="auth-password-links" id="auth-password-links" hidden><button id="auth-forgot" type="button">忘记密码？</button></div>
         <p class="auth-feedback" id="auth-feedback" role="status"></p>
         <button type="submit" class="auth-primary" id="auth-submit" disabled>登录</button>
       </form>
       <div class="auth-success" id="auth-success" hidden><div class="auth-success-icon">${icon('check')}</div><h3 id="auth-success-title" tabindex="-1">登录预览完成</h3><p id="auth-success-copy"></p><button class="auth-primary" id="auth-done" type="button">返回浏览</button></div>
+      <p class="auth-switch" id="auth-switch-row"><span id="auth-switch-label">还没有账户？</span><button id="auth-switch" type="button">立即注册</button></p>
       <p class="auth-preview-note">交互预览 · 不发送短信、不提交或保存输入内容</p>
       <div class="auth-footer">${icon('shield-check')}香港炬元 · 恒立财富</div>
     </div>`;
@@ -43,7 +44,7 @@
   const codes = new Map();
   const patterns = { '86': /^1[3-9]\d{9}$/, '852': /^[4-9]\d{7}$/, '853': /^6\d{7}$/, '886': /^9\d{8}$/, '1': /^[2-9]\d{9}$/ };
   let mode = 'sms';
-  let resetStage = 'verify';
+  let verificationStage = 'verify';
   let verifiedPhone = '';
   let timer;
   let returnFocus;
@@ -188,8 +189,10 @@
 
   const digits = () => phone.value.replace(/[\s()-]/g, '');
   const phoneKey = () => `+${region.value} ${digits()}`;
+  const codeKey = () => `${mode === 'register' ? 'register' : mode === 'reset' ? 'reset' : 'login'}:${phoneKey()}`;
   const validPhone = () => patterns[region.value].test(digits());
-  const resetPasswordValid = () => password.value.length >= 8 && password.value.length <= 32 && /[a-zA-Z]/.test(password.value) && /\d/.test(password.value);
+  const newPasswordValid = () => password.value.length >= 8 && password.value.length <= 32 && /[a-zA-Z]/.test(password.value) && /\d/.test(password.value);
+  const isNewPassword = () => (mode === 'reset' || mode === 'register') && verificationStage === 'password';
 
   function fieldError(input, message) {
     input.setAttribute('aria-invalid', String(Boolean(message)));
@@ -203,31 +206,38 @@
 
   function updateControls() {
     $('#auth-region-label').textContent = `+${region.value}`;
-    const sent = codes.get(phoneKey());
+    const sent = codes.get(codeKey());
     const remaining = Math.max(0, Math.ceil(((sent?.retryAt || 0) - Date.now()) / 1000));
     send.textContent = remaining ? `${remaining}秒后重发` : (sent ? '重新获取' : '获取验证码');
     send.disabled = !validPhone() || remaining > 0;
-    const isResetPassword = mode === 'reset' && resetStage === 'password';
-    submit.disabled = isResetPassword
-      ? !resetPasswordValid() || password.value !== confirm.value
-      : !validPhone() || (mode === 'password' ? !password.value : !/^\d{6}$/.test(code.value));
+    submit.disabled = isNewPassword()
+      ? verifiedPhone !== phoneKey() || !newPasswordValid() || password.value !== confirm.value
+      : !validPhone() || (mode === 'register' && verificationStage === 'phone' ? false : mode === 'password' ? !password.value : !/^\d{6}$/.test(code.value));
   }
 
   function showMode(nextMode) {
     mode = nextMode;
-    resetStage = 'verify';
+    verificationStage = mode === 'register' ? 'phone' : 'verify';
     verifiedPhone = '';
     form.hidden = false;
     $('#auth-success').hidden = true;
-    $('#auth-title').textContent = mode === 'reset' ? '找回密码' : '欢迎登录';
-    $('#auth-subtitle').textContent = mode === 'reset' ? '通过绑定的手机号码验证身份。' : '专注港美股，与每一份认真思考同行。';
-    $('.auth-tabs').hidden = mode === 'reset';
+    $('#auth-title').textContent = mode === 'register' ? '欢迎注册' : mode === 'reset' ? '找回密码' : '欢迎登录';
+    $('#auth-subtitle').textContent = mode === 'register' ? '使用手机号码，注册恒立财富账户。' : mode === 'reset' ? '通过绑定的手机号码验证身份。' : afterLogin ? '请先登录，再继续办理开户。' : '专注港美股，与每一份认真思考同行。';
+    $('.auth-tabs').hidden = mode === 'reset' || mode === 'register';
     $('#auth-back').hidden = mode !== 'reset';
-    $('#auth-code-group').hidden = mode === 'password';
+    $('#auth-back').innerHTML = `${icon('arrow-left')}返回登录`;
+    $('#auth-code-group').hidden = mode === 'password' || mode === 'register';
     $('#auth-password-group').hidden = mode !== 'password';
     $('#auth-confirm-group').hidden = true;
     $('#auth-password-links').hidden = mode !== 'password';
     $('#auth-password-label').textContent = '登录密码';
+    $('#auth-confirm-label').textContent = '确认新密码';
+    confirm.placeholder = '再次输入新密码';
+    $('#auth-switch-row').hidden = mode === 'reset';
+    $('#auth-switch-label').textContent = mode === 'register' ? '已有账户？' : '还没有账户？';
+    $('#auth-switch').textContent = mode === 'register' ? '立即登录' : '立即注册';
+    $('#auth-close').title = mode === 'register' ? '关闭注册' : '关闭登录';
+    $('#auth-close').setAttribute('aria-label', $('#auth-close').title);
     password.placeholder = '请输入登录密码';
     password.autocomplete = 'current-password';
     password.maxLength = 64;
@@ -237,8 +247,9 @@
     code.value = '';
     phone.readOnly = false;
     region.disabled = false;
-    submit.textContent = mode === 'reset' ? '下一步' : '登录';
-    form.setAttribute('aria-labelledby', mode === 'reset' ? 'auth-title' : `auth-tab-${mode}`);
+    submit.textContent = mode === 'reset' || mode === 'register' ? '下一步' : '登录';
+    form.setAttribute('role', mode === 'reset' || mode === 'register' ? 'group' : 'tabpanel');
+    form.setAttribute('aria-labelledby', mode === 'reset' || mode === 'register' ? 'auth-title' : `auth-tab-${mode}`);
     tabs.forEach(tab => {
       const active = tab.dataset.authMode === mode;
       tab.setAttribute('aria-selected', String(active));
@@ -247,6 +258,56 @@
     setPasswordVisibility(false);
     clearErrors();
     updateControls();
+  }
+
+  function showRegistrationVerification() {
+    verificationStage = 'verify';
+    verifiedPhone = '';
+    code.value = '';
+    password.value = '';
+    confirm.value = '';
+    $('#auth-title').textContent = '验证手机';
+    $('#auth-subtitle').textContent = '获取短信验证码，验证您的手机号码。';
+    $('#auth-back').hidden = false;
+    $('#auth-back').innerHTML = `${icon('arrow-left')}修改手机号`;
+    $('#auth-code-group').hidden = false;
+    $('#auth-password-group').hidden = true;
+    $('#auth-confirm-group').hidden = true;
+    phone.readOnly = true;
+    region.disabled = true;
+    submit.textContent = '下一步';
+    setPasswordVisibility(false);
+    clearErrors();
+    updateControls();
+    if (send.disabled) code.focus();
+    else send.focus();
+  }
+
+  function showNewPassword() {
+    verifiedPhone = phoneKey();
+    verificationStage = 'password';
+    code.value = '';
+    password.value = '';
+    confirm.value = '';
+    $('#auth-title').textContent = mode === 'register' ? '设置登录密码' : '找回密码';
+    $('#auth-subtitle').textContent = mode === 'register' ? '手机号验证通过，请设置您的登录密码。' : '设置新的登录密码。';
+    $('#auth-code-group').hidden = true;
+    $('#auth-password-group').hidden = false;
+    $('#auth-confirm-group').hidden = false;
+    $('#auth-password-label').textContent = mode === 'register' ? '登录密码' : '新密码';
+    $('#auth-confirm-label').textContent = mode === 'register' ? '确认密码' : '确认新密码';
+    confirm.placeholder = mode === 'register' ? '再次输入登录密码' : '再次输入新密码';
+    if (mode === 'register') $('#auth-back').innerHTML = `${icon('arrow-left')}重新验证手机`;
+    password.placeholder = '8-32位字母与数字';
+    password.autocomplete = 'new-password';
+    password.maxLength = 32;
+    phone.readOnly = true;
+    region.disabled = true;
+    submit.textContent = mode === 'register' ? '完成注册' : '确认重设';
+    setPasswordVisibility(false);
+    clearErrors();
+    updateControls();
+    password.focus();
   }
 
   function setPasswordVisibility(visible) {
@@ -304,6 +365,7 @@
     });
   });
   [phone, region].forEach(input => input.addEventListener('input', () => {
+    verifiedPhone = '';
     code.value = '';
     fieldError(phone, '');
     fieldError(code, '');
@@ -317,17 +379,29 @@
     updateControls();
   }));
   password.addEventListener('blur', () => {
-    if (mode === 'reset' && resetStage === 'password' && password.value) fieldError(password, resetPasswordValid() ? '' : '请使用8至32位字母和数字组合');
+    if (isNewPassword() && password.value) fieldError(password, newPasswordValid() ? '' : '请使用8至32位字母和数字组合');
   });
   confirm.addEventListener('blur', () => { if (confirm.value) fieldError(confirm, confirm.value === password.value ? '' : '两次输入的密码不一致'); });
   $('#auth-toggle-password').addEventListener('click', () => setPasswordVisibility(password.type === 'password'));
   $('#auth-forgot').addEventListener('click', () => { showMode('reset'); phone.focus(); });
-  $('#auth-back').addEventListener('click', () => { showMode('password'); phone.focus(); });
+  $('#auth-back').addEventListener('click', () => {
+    if (mode === 'register' && verificationStage === 'password') {
+      codes.delete(codeKey());
+      showRegistrationVerification();
+    } else {
+      showMode(mode === 'register' ? 'register' : 'password');
+      phone.focus();
+    }
+  });
+  $('#auth-switch').addEventListener('click', () => {
+    showMode(mode === 'register' ? 'sms' : 'register');
+    phone.focus();
+  });
 
   send.addEventListener('click', () => {
     if (!validPhone() || send.disabled) return;
     // The prototype never sends a request or persists credentials.
-    codes.set(phoneKey(), { retryAt: Date.now() + 60000, expiresAt: Date.now() + 300000 });
+    codes.set(codeKey(), { retryAt: Date.now() + 60000, expiresAt: Date.now() + 300000 });
     fieldError(code, '');
     $('#auth-feedback').textContent = '演示验证码：123456（5分钟内有效）';
     updateControls();
@@ -338,32 +412,21 @@
     event.preventDefault();
     updateControls();
     if (submit.disabled) return;
-    if (mode !== 'password' && resetStage !== 'password') {
-      const sent = codes.get(phoneKey());
+    if (mode === 'register' && verificationStage === 'phone') {
+      showRegistrationVerification();
+      return;
+    }
+    if (mode !== 'password' && verificationStage !== 'password') {
+      const sent = codes.get(codeKey());
       if (!sent) { fieldError(code, '请先获取验证码'); code.focus(); return; }
       if (sent.expiresAt <= Date.now()) { fieldError(code, '验证码已过期，请重新获取'); return; }
       if (code.value !== '123456') { fieldError(code, '验证码不正确，请重新输入'); code.focus(); return; }
     }
-    if (mode === 'reset' && resetStage === 'verify') {
-      verifiedPhone = phoneKey();
-      resetStage = 'password';
-      $('#auth-subtitle').textContent = '设置新的登录密码。';
-      $('#auth-code-group').hidden = true;
-      $('#auth-password-group').hidden = false;
-      $('#auth-confirm-group').hidden = false;
-      $('#auth-password-label').textContent = '新密码';
-      password.placeholder = '8至32位，包含字母和数字';
-      password.autocomplete = 'new-password';
-      password.maxLength = 32;
-      phone.readOnly = true;
-      region.disabled = true;
-      submit.textContent = '确认重设';
-      clearErrors();
-      updateControls();
-      password.focus();
+    if ((mode === 'reset' || mode === 'register') && verificationStage === 'verify') {
+      showNewPassword();
       return;
     }
-    if (mode === 'reset' && (verifiedPhone !== phoneKey() || !resetPasswordValid() || password.value !== confirm.value)) return;
+    if ((mode === 'reset' || mode === 'register') && (verifiedPhone !== phoneKey() || !newPasswordValid() || password.value !== confirm.value)) return;
     if (mode !== 'reset') {
       saveAccountState({ loggedIn: true, opened: false });
       const continuation = afterLogin;
@@ -372,7 +435,7 @@
       confirm.value = '';
       code.value = '';
       codes.clear();
-      if (continuation) {
+      if (continuation && mode !== 'register') {
         dialog.addEventListener('close', continuation, { once: true });
         dialog.close();
         return;
@@ -381,12 +444,13 @@
     form.hidden = true;
     $('.auth-tabs').hidden = true;
     $('#auth-back').hidden = true;
+    $('#auth-switch-row').hidden = true;
     $('#auth-title').textContent = '恒立财富';
     $('#auth-subtitle').textContent = '与每一份认真思考同行。';
     $('#auth-success').hidden = false;
-    $('#auth-success-title').textContent = mode === 'reset' ? '密码重设预览完成' : '登录预览完成';
-    $('#auth-success-copy').textContent = mode === 'reset' ? '已完成操作流程演示，真实账户密码未变更。' : '已完成操作流程演示，尚未验证或登录真实账户。';
-    $('#auth-done').textContent = mode === 'reset' ? '返回登录' : '返回浏览';
+    $('#auth-success-title').textContent = mode === 'register' ? '注册预览完成' : mode === 'reset' ? '密码重设预览完成' : '登录预览完成';
+    $('#auth-success-copy').textContent = mode === 'register' ? '已完成手机号验证与密码设置流程演示，未创建真实账户。' : mode === 'reset' ? '已完成操作流程演示，真实账户密码未变更。' : '已完成操作流程演示，尚未验证或登录真实账户。';
+    $('#auth-done').textContent = mode === 'register' && afterLogin ? '继续开户' : mode === 'reset' ? '返回登录' : '返回浏览';
     password.value = '';
     confirm.value = '';
     code.value = '';
@@ -394,13 +458,20 @@
   });
   $('#auth-done').addEventListener('click', () => {
     if (mode === 'reset') { showMode('password'); password.focus(); }
-    else dialog.close();
+    else {
+      if (mode === 'register' && afterLogin) dialog.addEventListener('close', afterLogin, { once: true });
+      dialog.close();
+    }
   });
-  if (new URLSearchParams(location.search).get('login') === '1') {
+  const authParams = new URLSearchParams(location.search);
+  if (authParams.get('login') === '1' || authParams.get('register') === '1') {
     const trigger = [...document.querySelectorAll('[data-login-open]')].find(button => button.getClientRects().length);
     if (trigger) {
       if (accountState.loggedIn) openService('session', trigger);
-      else openLogin({ currentTarget: trigger });
+      else {
+        openLogin({ currentTarget: trigger });
+        if (authParams.get('register') === '1') showMode('register');
+      }
     }
   }
 })();
