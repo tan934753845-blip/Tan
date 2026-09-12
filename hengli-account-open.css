@@ -8,6 +8,7 @@ a:hover { color: var(--gold); }
 :is(a, button):focus-visible { outline: 2px solid #a88d5f; outline-offset: 4px; }
 h1, h2, h3, p { margin: 0; }
 img { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
 .site { max-width: 1920px; margin: 0 auto; }
 .inner { width: calc(100% - 112px); max-width: 1200px; margin: 0 auto; }
 .site-header { background: #fff; border-bottom: 1px solid var(--rule); }
@@ -37,9 +38,12 @@ h1 { font-size: 34px; line-height: 1.45; font-weight: 600; }
 .opening-next { display: flex; align-items: center; justify-content: center; gap: 40px; width: 256px; min-height: 52px; border: 1px solid #37393a; border-radius: 5px; background: #37393a; color: #fff; font-weight: 500; font-size: 16px; }
 .opening-next:hover { background: #4a4b49; }
 .opening-next img { width: 19px; height: 19px; filter: brightness(0) invert(1); }
-.opening-actions p { color: #8a8b86; font-size: 13px; white-space: nowrap; }
-.inline-login { min-height: 44px; padding: 0 0 0 6px; border: 0; background: transparent; color: #8e7956; }
-.inline-login:hover { text-decoration: underline; }
+.opening-complete { padding: 48px 0 24px; }
+.opening-complete-icon { display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border: 1px solid #e1d8c5; border-radius: 50%; background: #f6f4ee; margin-bottom: 28px; }
+.opening-complete-icon img { width: 28px; height: 28px; }
+.opening-complete h2 { font-size: 22px; font-weight: 500; }
+.opening-complete p { color: #7a7d7e; margin-top: 14px; max-width: 400px; }
+.opening-complete small { display: block; color: #999b92; font-size: 11px; margin-top: 24px; }
 .support-panel { position: relative; display: flex; flex-direction: column; overflow: hidden; border-top: 2px solid #b6a27e; color: #fff; background: #363738 url("hengli-news-mast-bg.png") 70% center / auto 100%; }
 .support-content { flex: 1; padding: 34px 32px 28px; }
 .support-eyebrow { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #d2bd95; margin-bottom: 16px; }

@@ -3,6 +3,40 @@ header .account-entry:hover { color: #fff; background: #494b4b; border-color: #4
 header .account-entry:focus-visible { outline: 2px solid #ac9266; outline-offset: 3px; }
 header .account-desktop { position: absolute; left: 84.16%; top: 19.3%; width: 11.7%; height: 60.2%; }
 header .account-mobile { display: none; }
+html.hengli-service-open { overflow: hidden; scrollbar-gutter: stable; }
+#hengli-service { box-sizing: border-box; width: min(480px, calc(100% - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; border: 1px solid #e6e3db; border-radius: 8px; overflow: auto; overscroll-behavior: contain; color: #363839; background: #fff; box-shadow: 0 24px 90px #14151728; font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+#hengli-service::backdrop { background: #23242680; backdrop-filter: blur(2px); }
+#hengli-service *, #hengli-service *::before, #hengli-service *::after { box-sizing: border-box; }
+#hengli-service [hidden] { display: none !important; }
+#hengli-service :is(h2, h3, p) { margin: 0; }
+#hengli-service img { display: block; width: 20px; height: 20px; flex-shrink: 0; }
+#hengli-service button { display: inline-flex; align-items: center; justify-content: center; min-width: 0; height: auto; min-height: 44px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: #444546; font: inherit; letter-spacing: 0; cursor: pointer; }
+#hengli-service button:focus-visible { outline: 2px solid #aa9267; outline-offset: 3px; }
+#hengli-service .hl-dialog-top { display: flex; align-items: center; justify-content: space-between; padding: 22px 28px 10px 36px; border-top: 2px solid #b6a27e; background: linear-gradient(135deg, transparent 76%, #aa92670c 76.2%, transparent 76.6%), linear-gradient(135deg, transparent 83%, #aa926713 83.2%, transparent 83.6%), #fff; }
+#hengli-service .hl-dialog-brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 600; color: #494a49; }
+#hengli-service .hl-dialog-brand::before { content: ""; width: 3px; height: 19px; background: #a68d60; }
+#hengli-service .hl-icon-button { width: 36px; min-height: 36px; height: 36px; }
+#hengli-service .hl-icon-button:hover { background: #f4f3ef; }
+#hengli-service .hl-dialog-body { padding: 10px 36px 28px; }
+#hengli-service h2 { font-size: 28px; line-height: 1.4; font-weight: 600; }
+#hengli-service h3 { font-size: 15px; font-weight: 500; }
+#hengli-service .hl-dialog-intro { margin: 10px 0 25px; color: #83847f; font-size: 14px; line-height: 1.8; }
+#hengli-service .hl-contact-email { display: flex; align-items: flex-start; gap: 14px; padding: 20px 0 23px; border-top: 1px solid #ecece7; border-bottom: 1px solid #ecece7; }
+#hengli-service .hl-contact-email > img { margin-top: 3px; opacity: .7; }
+#hengli-service .hl-contact-email p { margin-top: 6px; font-size: 14px; color: #96978e; }
+#hengli-service .hl-contact-wecom { padding-top: 23px; text-align: center; }
+#hengli-service .hl-contact-qr { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: 168px; height: 168px; margin: 16px auto 14px; border: 1px solid #e4e1d8; border-radius: 4px; color: #82857d; background: #fafaf8; }
+#hengli-service .hl-contact-qr img { width: 62px; height: 62px; margin-bottom: 7px; opacity: .45; }
+#hengli-service .hl-contact-qr span { font-size: 12px; }
+#hengli-service .hl-contact-qr small { font-size: 11px; color: #98998f; }
+#hengli-service .hl-contact-wecom > p { color: #8d9085; font-size: 12px; }
+#hengli-service .hl-dialog-footer { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 26px; padding-top: 16px; border-top: 1px solid #edede8; font-size: 12px; color: #8f9188; }
+#hengli-service .hl-dialog-footer img { width: 15px; height: 15px; opacity: .65; }
+#hengli-service .hl-primary { width: 100%; min-height: 50px; padding: 10px 16px; background: #37393a; color: #fff; font-size: 15px; }
+#hengli-service .hl-primary:hover { background: #494b4b; }
+#hengli-service .hl-secondary { width: 100%; min-height: 44px; margin-top: 8px; color: #957f59; }
+#hengli-service .hl-secondary:hover { background: #f8f8f5; }
+#hengli-service .hl-preview-note { margin-top: 16px; text-align: center; font-size: 11px; color: #989b91; }
 @media (max-width: 980px) {
   header .account-desktop { display: none; }
   header .account-mobile { display: inline-flex; flex: 0 0 auto; min-height: 38px; padding: 8px 15px; font-size: 13px; }
@@ -12,4 +46,8 @@ header .account-mobile { display: none; }
   header .mobile-head, header .mobile-nav { gap: 2px 10px; }
   header .account-mobile { min-height: 36px; padding: 7px 12px; }
   header .mobile-head nav, header .mobile-nav nav { order: 3; }
+  #hengli-service { width: calc(100% - 24px); max-height: calc(100dvh - 24px); }
+  #hengli-service .hl-dialog-top { padding: 19px 18px 14px 24px; }
+  #hengli-service .hl-dialog-body { padding: 8px 24px 25px; }
+  #hengli-service h2 { font-size: 25px; }
 }

@@ -47,6 +47,144 @@
   let verifiedPhone = '';
   let timer;
   let returnFocus;
+  let afterLogin = null;
+  const previewStateKey = 'hengli-design-account-v1';
+  let accountState = { loggedIn: false, opened: false };
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(previewStateKey));
+    if (saved?.loggedIn === true) accountState = { loggedIn: true, opened: saved.opened === true };
+  } catch { /* Private browsing can make session storage unavailable. */ }
+
+  // These flags drive a design preview only; real authorization belongs on the server.
+  function saveAccountState(next) {
+    accountState = { loggedIn: next.loggedIn === true, opened: next.loggedIn === true && next.opened === true };
+    try { sessionStorage.setItem(previewStateKey, JSON.stringify(accountState)); } catch { /* Keep the current page interactive. */ }
+    renderAccountState();
+  }
+
+  const serviceDialog = document.createElement('dialog');
+  serviceDialog.id = 'hengli-service';
+  serviceDialog.className = 'hl-dialog';
+  serviceDialog.setAttribute('aria-labelledby', 'service-title');
+  serviceDialog.innerHTML = `
+    <div class="hl-dialog-top"><span class="hl-dialog-brand">恒立财富</span><button type="button" class="hl-icon-button" data-service-close title="关闭弹窗" aria-label="关闭弹窗">${icon('x')}</button></div>
+    <div class="hl-dialog-body">
+      <h2 id="service-title" tabindex="-1">联系我们</h2>
+      <div data-service-panel="contact" hidden>
+        <p class="hl-dialog-intro">投资路上，与您保持联系。</p>
+        <section class="hl-contact-email" aria-labelledby="contact-email-title"><img src="hengli-opening-mail.svg" alt="" aria-hidden="true"><div><h3 id="contact-email-title">客服邮箱</h3><p>邮箱地址待更新</p></div></section>
+        <section class="hl-contact-wecom" aria-labelledby="contact-wecom-title"><h3 id="contact-wecom-title">企业微信</h3><div class="hl-contact-qr" role="img" aria-label="企业微信二维码预留位置，尚未配置，暂不可扫码"><img src="hengli-opening-scan-line.svg" alt="" aria-hidden="true"><span>企业微信二维码</span><small>待配置</small></div><p>账户咨询 · 客户服务</p></section>
+      </div>
+      <div data-service-panel="session" hidden>
+        <p class="hl-dialog-intro" id="service-session-copy"></p>
+        <button type="button" class="hl-primary" id="service-continue">继续开户</button>
+        <button type="button" class="hl-secondary" id="service-logout">退出登录</button>
+        <p class="hl-preview-note">当前为演示状态，未登录真实账户。</p>
+      </div>
+      <div data-service-panel="opening" hidden>
+        <p class="hl-dialog-intro">真实开户申请尚未开放。您可以先查看开户完成后的页面与联系入口。</p>
+        <button type="button" class="hl-primary" id="service-preview-complete">预览开户完成效果</button>
+        <button type="button" class="hl-secondary" data-service-close>返回开户页</button>
+        <p class="hl-preview-note">仅切换展示状态，不创建账户或提交资料。</p>
+      </div>
+      <div class="hl-dialog-footer">${icon('shield-check')}香港炬元 · 恒立财富</div>
+    </div>`;
+  document.body.append(serviceDialog);
+  let serviceReturnFocus;
+  let serviceMode;
+
+  function openService(mode, trigger) {
+    serviceMode = mode;
+    serviceReturnFocus = trigger;
+    serviceDialog.querySelectorAll('[data-service-panel]').forEach(panel => { panel.hidden = panel.dataset.servicePanel !== mode; });
+    serviceDialog.querySelector('#service-title').textContent = { contact: '联系我们', session: '我的账户', opening: '开户申请预览' }[mode];
+    serviceDialog.querySelector('#service-session-copy').textContent = accountState.opened ? '已开户，可通过客服邮箱或企业微信联系我们。' : '已登录，您可以继续办理开户。';
+    serviceDialog.querySelector('#service-continue').textContent = accountState.opened ? '联系我们' : '继续开户';
+    if (!serviceDialog.open) serviceDialog.showModal();
+    document.documentElement.classList.add('hengli-service-open');
+    serviceDialog.querySelector('#service-title').focus({ preventScroll: true });
+  }
+
+  serviceDialog.querySelectorAll('[data-service-close]').forEach(button => button.addEventListener('click', () => serviceDialog.close()));
+  serviceDialog.addEventListener('click', event => {
+    if (event.target !== serviceDialog) return;
+    const bounds = serviceDialog.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) serviceDialog.close();
+  });
+  serviceDialog.addEventListener('close', () => {
+    document.documentElement.classList.remove('hengli-service-open');
+    serviceReturnFocus?.focus({ preventScroll: true });
+  });
+  serviceDialog.querySelector('#service-logout').addEventListener('click', () => {
+    afterLogin = null;
+    saveAccountState({ loggedIn: false, opened: false });
+    serviceDialog.close();
+  });
+  serviceDialog.querySelector('#service-continue').addEventListener('click', () => {
+    if (accountState.opened) { openService('contact', serviceReturnFocus); return; }
+    serviceDialog.close();
+    continueOpening();
+  });
+  serviceDialog.querySelector('#service-preview-complete').addEventListener('click', () => {
+    if (serviceMode !== 'opening' || !accountState.loggedIn) return;
+    saveAccountState({ loggedIn: true, opened: true });
+    serviceDialog.close();
+  });
+
+  function renderAccountState() {
+    document.querySelectorAll('.account-entry').forEach(entry => {
+      entry.textContent = accountState.opened ? '联系我们' : '立即开户';
+      entry.setAttribute('role', 'button');
+      if (!accountState.loggedIn || accountState.opened) entry.setAttribute('aria-haspopup', 'dialog');
+      else entry.removeAttribute('aria-haspopup');
+    });
+    document.querySelectorAll('.login-trigger').forEach(trigger => {
+      const label = accountState.loggedIn ? '我的账户' : '登录';
+      trigger.setAttribute('aria-label', label);
+      trigger.title = label;
+      if (trigger.classList.contains('login-desktop')) trigger.textContent = accountState.loggedIn ? '已登录' : '登录';
+    });
+    const next = document.querySelector('[data-opening-next]');
+    if (next) {
+      next.querySelector('span').textContent = accountState.opened ? '联系我们' : '下一步';
+      document.querySelector('#opening-title').textContent = accountState.opened ? '开户已完成' : '第三方见证开户';
+      document.querySelector('.opening-intro').textContent = accountState.opened ? '感谢您的信任，恒立财富与您同行。' : '从资料准备开始，开启您的投资之旅。';
+      document.querySelector('.opening-process').classList.toggle('is-opened', accountState.opened);
+      document.querySelector('[data-opening-complete]').hidden = !accountState.opened;
+      document.querySelector('.opening-steps').hidden = accountState.opened;
+    }
+  }
+
+  function continueOpening() {
+    if (!accountState.loggedIn || accountState.opened) return;
+    if (document.querySelector('[data-opening-next]')) document.querySelector('[data-opening-next]').focus();
+    else location.assign(new URL('hengli-account-open.html', location.href).href);
+  }
+
+  function accountAction(trigger, isNext = false) {
+    if (accountState.opened) { openService('contact', trigger); return; }
+    if (!accountState.loggedIn) {
+      openLogin({ currentTarget: trigger }, () => isNext ? openService('opening', trigger) : continueOpening());
+      return;
+    }
+    if (isNext) openService('opening', trigger);
+    else continueOpening();
+  }
+  document.querySelectorAll('.account-entry').forEach(entry => {
+    entry.addEventListener('click', event => { event.preventDefault(); accountAction(entry); });
+    entry.addEventListener('keydown', event => {
+      if (event.key === ' ') { event.preventDefault(); entry.click(); }
+    });
+  });
+  document.querySelector('[data-opening-next]')?.addEventListener('click', event => accountAction(event.currentTarget, true));
+  renderAccountState();
+  window.addEventListener('pageshow', () => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(previewStateKey));
+      accountState = { loggedIn: saved?.loggedIn === true, opened: saved?.loggedIn === true && saved?.opened === true };
+    } catch { /* Fall back to this page's state. */ }
+    renderAccountState();
+  });
 
   const digits = () => phone.value.replace(/[\s()-]/g, '');
   const phoneKey = () => `+${region.value} ${digits()}`;
@@ -121,16 +259,22 @@
     toggle.querySelector('img').src = `hengli-login-${visible ? 'eye-off' : 'eye'}.svg`;
   }
 
-  function openLogin(event) {
+  function openLogin(event, continuation = null) {
+    if (dialog.open) return;
+    afterLogin = continuation;
     returnFocus = event.currentTarget;
     showMode('sms');
+    if (afterLogin) $('#auth-subtitle').textContent = '请先登录，再继续办理开户。';
     dialog.showModal();
     document.documentElement.classList.add('hengli-login-open');
     phone.focus({ preventScroll: true });
     timer = setInterval(updateControls, 1000);
   }
 
-  document.querySelectorAll('[data-login-open]').forEach(button => button.addEventListener('click', openLogin));
+  document.querySelectorAll('[data-login-open]').forEach(button => button.addEventListener('click', event => {
+    if (accountState.loggedIn) openService('session', event.currentTarget);
+    else openLogin(event);
+  }));
   $('#auth-close').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', event => {
     if (event.target !== dialog) return;
@@ -138,6 +282,7 @@
     if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
   });
   dialog.addEventListener('close', () => {
+    afterLogin = null;
     clearInterval(timer);
     codes.clear();
     form.reset();
@@ -219,6 +364,20 @@
       return;
     }
     if (mode === 'reset' && (verifiedPhone !== phoneKey() || !resetPasswordValid() || password.value !== confirm.value)) return;
+    if (mode !== 'reset') {
+      saveAccountState({ loggedIn: true, opened: false });
+      const continuation = afterLogin;
+      phone.value = '';
+      password.value = '';
+      confirm.value = '';
+      code.value = '';
+      codes.clear();
+      if (continuation) {
+        dialog.addEventListener('close', continuation, { once: true });
+        dialog.close();
+        return;
+      }
+    }
     form.hidden = true;
     $('.auth-tabs').hidden = true;
     $('#auth-back').hidden = true;
@@ -239,6 +398,9 @@
   });
   if (new URLSearchParams(location.search).get('login') === '1') {
     const trigger = [...document.querySelectorAll('[data-login-open]')].find(button => button.getClientRects().length);
-    if (trigger) openLogin({ currentTarget: trigger });
+    if (trigger) {
+      if (accountState.loggedIn) openService('session', trigger);
+      else openLogin({ currentTarget: trigger });
+    }
   }
 })();
