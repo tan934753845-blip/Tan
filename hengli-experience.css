@@ -1,0 +1,43 @@
+.carousel .experience-trigger, .homepage-footer .experience-trigger { position: absolute; left: 4.9505%; top: 57.7632%; width: 14.7277%; height: 8.4211%; min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 6px; background: transparent; cursor: pointer; }
+.carousel .experience-trigger:hover, .homepage-footer .experience-trigger:hover { background: #a58d5d14; }
+.carousel .experience-trigger:focus-visible, .homepage-footer .experience-trigger:focus-visible { outline: 3px solid #bda679; outline-offset: 4px; }
+.carousel .campaign-experience { left: 5.1361%; top: 51.8421%; }
+.homepage-footer { position: relative; }
+.homepage-footer .experience-trigger { left: 77.3515%; top: 67.1066%; height: 6.4975%; }
+html.hengli-experience-open { overflow: hidden; scrollbar-gutter: stable; }
+#hengli-experience { box-sizing: border-box; width: min(500px, calc(100% - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 0; overflow: auto; overscroll-behavior: contain; border: 1px solid #e4e0d6; border-radius: 8px; background: #fff; color: #343637; box-shadow: 0 24px 80px #12141740; font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+#hengli-experience::backdrop { background: #1f202363; backdrop-filter: blur(2px); }
+#hengli-experience *, #hengli-experience *::before, #hengli-experience *::after { box-sizing: border-box; }
+#hengli-experience :is(h2, p) { margin: 0; }
+#hengli-experience .experience-top { display: flex; align-items: center; justify-content: space-between; min-height: 80px; padding: 21px 24px 12px 36px; border-top: 2px solid #baa57c; background: linear-gradient(145deg, transparent 77%, #f5f3ee 77.2%, transparent 77.5%), linear-gradient(145deg, transparent 83%, #f7f5f0 83.2%, transparent 83.5%), #fff; }
+#hengli-experience .experience-brand { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 600; color: #4b4c49; }
+#hengli-experience .experience-brand::before { content: ""; width: 3px; height: 20px; background: #a68d60; }
+#hengli-experience .experience-close { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; min-width: 40px; padding: 0; border: 0; border-radius: 4px; background: transparent; cursor: pointer; }
+#hengli-experience .experience-close:hover { background: #f5f4ef; }
+#hengli-experience .experience-close:focus-visible { outline: 2px solid #aa9267; outline-offset: 2px; }
+#hengli-experience .experience-close img { width: 22px; height: 22px; opacity: .75; }
+#hengli-experience .experience-body { padding: 15px 36px 29px; text-align: center; }
+#hengli-experience h2 { font-size: 30px; line-height: 1.4; font-weight: 600; }
+#hengli-experience .experience-subtitle { margin-top: 14px; color: #85877e; font-size: 16px; }
+#hengli-experience .experience-qr { width: min(258px, 100%); aspect-ratio: 1; margin: 34px auto 25px; padding: 8px; border: 1px solid #e3dfd4; border-radius: 5px; background: #fff; }
+#hengli-experience .experience-qr img { display: block; width: 100%; height: 100%; object-fit: contain; }
+#hengli-experience .experience-hint { display: flex; justify-content: center; align-items: center; gap: 11px; color: #60655e; font-size: 16px; }
+#hengli-experience .experience-hint img { width: 21px; height: 21px; flex: 0 0 21px; opacity: .8; }
+#hengli-experience .experience-note { margin-top: 21px; color: #9c9f94; font-size: 12px; }
+#hengli-experience .experience-footer { display: flex; justify-content: center; align-items: center; gap: 9px; margin-top: 43px; padding-top: 25px; border-top: 1px solid #ecece6; color: #8d9286; font-size: 13px; }
+#hengli-experience .experience-footer img { width: 16px; height: 16px; flex: 0 0 16px; opacity: .65; }
+@media (max-width: 540px) {
+  #hengli-experience { width: calc(100% - 24px); max-height: calc(100dvh - 24px); }
+  #hengli-experience .experience-top { padding: 16px 16px 10px 24px; min-height: 70px; }
+  #hengli-experience .experience-body { padding: 12px 24px 25px; }
+  #hengli-experience h2 { font-size: 25px; }
+  #hengli-experience .experience-subtitle { font-size: 14px; }
+  #hengli-experience .experience-qr { margin-top: 26px; width: min(242px, 100%); }
+  #hengli-experience .experience-hint { font-size: 14px; gap: 7px; }
+  #hengli-experience .experience-note { font-size: 11px; margin-top: 17px; }
+  #hengli-experience .experience-footer { font-size: 12px; margin-top: 29px; padding-top: 20px; }
+}
+@media (max-height: 650px) {
+  #hengli-experience .experience-qr { width: min(208px, 100%); margin-top: 22px; margin-bottom: 20px; }
+  #hengli-experience .experience-footer { margin-top: 24px; padding-top: 18px; }
+}
