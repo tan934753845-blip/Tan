@@ -27,7 +27,7 @@
       </form>
       <div class="auth-success" id="auth-success" hidden><div class="auth-success-icon">${icon('check')}</div><h3 id="auth-success-title" tabindex="-1">登录预览完成</h3><p id="auth-success-copy"></p><button class="auth-primary" id="auth-done" type="button">返回浏览</button></div>
       <p class="auth-switch" id="auth-switch-row"><span id="auth-switch-label">还没有账户？</span><button id="auth-switch" type="button">立即注册</button></p>
-      <p class="auth-preview-note">交互预览 · 不发送短信、不提交或保存输入内容</p>
+      <p class="auth-preview-note">交互预览 · 不发送短信，不验证真实账户</p>
       <div class="auth-footer">${icon('shield-check')}香港炬元 · 恒立财富</div>
     </div>`;
   document.body.append(dialog);
@@ -50,18 +50,133 @@
   let returnFocus;
   let afterLogin = null;
   const previewStateKey = 'hengli-design-account-v1';
-  let accountState = { loggedIn: false, opened: false };
+  function normalizeAccountState(saved) {
+    const loggedIn = saved?.loggedIn === true;
+    return {
+      loggedIn,
+      opened: loggedIn && saved?.opened === true,
+      maskedPhone: loggedIn && /^\+\d{1,3} \d{1,3}\*{3,7} \d{4}$/.test(saved?.maskedPhone || '') ? saved.maskedPhone : ''
+    };
+  }
+  let accountState = normalizeAccountState(null);
   try {
     const saved = JSON.parse(sessionStorage.getItem(previewStateKey));
-    if (saved?.loggedIn === true) accountState = { loggedIn: true, opened: saved.opened === true };
+    accountState = normalizeAccountState(saved);
   } catch { /* Private browsing can make session storage unavailable. */ }
 
-  // These flags drive a design preview only; real authorization belongs on the server.
+  // Only preview flags and a masked phone persist in this tab; no credentials or full phone.
   function saveAccountState(next) {
-    accountState = { loggedIn: next.loggedIn === true, opened: next.loggedIn === true && next.opened === true };
-    try { sessionStorage.setItem(previewStateKey, JSON.stringify(accountState)); } catch { /* Keep the current page interactive. */ }
+    accountState = normalizeAccountState({ ...accountState, ...next });
+    try {
+      if (accountState.loggedIn) sessionStorage.setItem(previewStateKey, JSON.stringify(accountState));
+      else sessionStorage.removeItem(previewStateKey);
+    } catch { /* Keep the current page interactive. */ }
     renderAccountState();
   }
+
+  const loginTriggers = [...document.querySelectorAll('[data-login-open]')];
+  const profile = document.createElement('div');
+  profile.id = 'hengli-profile';
+  profile.setAttribute('popover', 'manual');
+  profile.setAttribute('role', 'region');
+  profile.setAttribute('aria-label', '我的账户');
+  profile.innerHTML = `
+    <div class="profile-surface">
+      <div class="profile-identity"><span class="profile-avatar" role="img" aria-label="默认用户头像">${icon('user-round')}</span><div><p class="profile-name">恒立用户</p><p class="profile-id">ID <span>10082638</span></p></div></div>
+      <dl class="profile-details"><div><dt>手机号码</dt><dd id="profile-phone"></dd></div><div><dt>开户状态</dt><dd><span id="profile-status" class="profile-status">${icon('check')}<span></span></span></dd></div></dl>
+      <div class="profile-actions"><button id="profile-logout" type="button">${icon('log-out')}<span>退出登录</span></button></div>
+    </div>`;
+  document.body.append(profile);
+  let profileTrigger;
+  let profilePinned = false;
+  let profileTimer;
+  const profileIsOpen = () => profile.matches(':popover-open');
+
+  function closeProfile(restoreFocus = false) {
+    clearTimeout(profileTimer);
+    if (profileIsOpen()) profile.hidePopover();
+    profilePinned = false;
+    loginTriggers.forEach(trigger => {
+      if (accountState.loggedIn) trigger.setAttribute('aria-expanded', 'false');
+      else trigger.removeAttribute('aria-expanded');
+    });
+    if (restoreFocus) profileTrigger?.focus({ preventScroll: true });
+  }
+
+  function openProfile(trigger, pinned = false) {
+    if (!accountState.loggedIn || document.querySelector('dialog[open]')) return;
+    clearTimeout(profileTimer);
+    if (profileTrigger !== trigger) {
+      closeProfile();
+      profileTrigger = trigger;
+      trigger.insertAdjacentElement('afterend', profile);
+    }
+    profilePinned = pinned;
+    if (!profileIsOpen()) profile.showPopover();
+    const anchor = trigger.getBoundingClientRect();
+    const bounds = profile.getBoundingClientRect();
+    const center = anchor.left + anchor.width / 2;
+    const left = Math.max(12, Math.min(center + 50 - bounds.width, innerWidth - bounds.width - 12));
+    const top = Math.max(12, Math.min(anchor.bottom + 12, innerHeight - bounds.height - 12));
+    profile.style.left = `${left}px`;
+    profile.style.top = `${top}px`;
+    profile.style.setProperty('--profile-pointer', `${Math.max(18, Math.min(center - left, bounds.width - 18))}px`);
+    profile.classList.toggle('profile-pointer-hidden', top < anchor.bottom);
+    loginTriggers.forEach(button => button.setAttribute('aria-expanded', String(button === trigger)));
+  }
+
+  function scheduleProfileClose() {
+    clearTimeout(profileTimer);
+    profileTimer = setTimeout(() => {
+      if (!profilePinned && !profile.contains(document.activeElement)) closeProfile();
+    }, 200);
+  }
+  loginTriggers.forEach(trigger => {
+    trigger.addEventListener('mouseenter', () => {
+      if (matchMedia('(any-hover: hover)').matches) openProfile(trigger, profileIsOpen() && profilePinned);
+    });
+    trigger.addEventListener('mouseleave', scheduleProfileClose);
+    trigger.addEventListener('keydown', event => {
+      if (accountState.loggedIn && event.key === 'ArrowDown') {
+        event.preventDefault();
+        openProfile(trigger, true);
+        profile.querySelector('button').focus();
+      }
+    });
+  });
+  profile.addEventListener('mouseenter', () => clearTimeout(profileTimer));
+  profile.addEventListener('mouseleave', scheduleProfileClose);
+  profile.addEventListener('toggle', () => {
+    if (!profileIsOpen()) {
+      profilePinned = false;
+      loginTriggers.forEach(trigger => {
+        if (accountState.loggedIn) trigger.setAttribute('aria-expanded', 'false');
+        else trigger.removeAttribute('aria-expanded');
+      });
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && profileIsOpen()) {
+      event.preventDefault();
+      closeProfile(true);
+    }
+  });
+  document.addEventListener('pointerdown', event => {
+    if (profileIsOpen() && !profile.contains(event.target) && !profileTrigger?.contains(event.target)) closeProfile();
+  });
+  document.addEventListener('focusin', event => {
+    if (profileIsOpen() && !profile.contains(event.target) && !profileTrigger?.contains(event.target)) closeProfile();
+  });
+  window.addEventListener('resize', () => closeProfile());
+  document.addEventListener('scroll', event => {
+    if (!profile.contains(event.target)) closeProfile();
+  }, true);
+  profile.querySelector('#profile-logout').addEventListener('click', () => {
+    closeProfile();
+    afterLogin = null;
+    saveAccountState({ loggedIn: false, opened: false, maskedPhone: '' });
+    profileTrigger?.focus({ preventScroll: true });
+  });
 
   const serviceDialog = document.createElement('dialog');
   serviceDialog.id = 'hengli-service';
@@ -76,12 +191,6 @@
         <section class="hl-contact-email" aria-labelledby="contact-email-title"><img src="hengli-opening-mail.svg" alt="" aria-hidden="true"><div><h3 id="contact-email-title">客服邮箱</h3><p>邮箱地址待更新</p></div></section>
         <section class="hl-contact-wecom" aria-labelledby="contact-wecom-title"><h3 id="contact-wecom-title">企业微信</h3><div class="hl-contact-qr" role="img" aria-label="企业微信二维码预留位置，尚未配置，暂不可扫码"><img src="hengli-opening-scan-line.svg" alt="" aria-hidden="true"><span>企业微信二维码</span><small>待配置</small></div><p>账户咨询 · 客户服务</p></section>
       </div>
-      <div data-service-panel="session" hidden>
-        <p class="hl-dialog-intro" id="service-session-copy"></p>
-        <button type="button" class="hl-primary" id="service-continue">继续开户</button>
-        <button type="button" class="hl-secondary" id="service-logout">退出登录</button>
-        <p class="hl-preview-note">当前为演示状态，未登录真实账户。</p>
-      </div>
       <div data-service-panel="opening" hidden>
         <p class="hl-dialog-intro">真实开户申请尚未开放。您可以先查看开户完成后的页面与联系入口。</p>
         <button type="button" class="hl-primary" id="service-preview-complete">预览开户完成效果</button>
@@ -95,12 +204,11 @@
   let serviceMode;
 
   function openService(mode, trigger) {
+    closeProfile();
     serviceMode = mode;
     serviceReturnFocus = trigger;
     serviceDialog.querySelectorAll('[data-service-panel]').forEach(panel => { panel.hidden = panel.dataset.servicePanel !== mode; });
-    serviceDialog.querySelector('#service-title').textContent = { contact: '联系我们', session: '我的账户', opening: '开户申请预览' }[mode];
-    serviceDialog.querySelector('#service-session-copy').textContent = accountState.opened ? '已开户，可通过客服邮箱或企业微信联系我们。' : '已登录，您可以继续办理开户。';
-    serviceDialog.querySelector('#service-continue').textContent = accountState.opened ? '联系我们' : '继续开户';
+    serviceDialog.querySelector('#service-title').textContent = { contact: '联系我们', opening: '开户申请预览' }[mode];
     if (!serviceDialog.open) serviceDialog.showModal();
     document.documentElement.classList.add('hengli-service-open');
     serviceDialog.querySelector('#service-title').focus({ preventScroll: true });
@@ -116,16 +224,6 @@
     document.documentElement.classList.remove('hengli-service-open');
     serviceReturnFocus?.focus({ preventScroll: true });
   });
-  serviceDialog.querySelector('#service-logout').addEventListener('click', () => {
-    afterLogin = null;
-    saveAccountState({ loggedIn: false, opened: false });
-    serviceDialog.close();
-  });
-  serviceDialog.querySelector('#service-continue').addEventListener('click', () => {
-    if (accountState.opened) { openService('contact', serviceReturnFocus); return; }
-    serviceDialog.close();
-    continueOpening();
-  });
   serviceDialog.querySelector('#service-preview-complete').addEventListener('click', () => {
     if (serviceMode !== 'opening' || !accountState.loggedIn) return;
     saveAccountState({ loggedIn: true, opened: true });
@@ -139,12 +237,29 @@
       if (!accountState.loggedIn || accountState.opened) entry.setAttribute('aria-haspopup', 'dialog');
       else entry.removeAttribute('aria-haspopup');
     });
-    document.querySelectorAll('.login-trigger').forEach(trigger => {
+    loginTriggers.forEach(trigger => {
       const label = accountState.loggedIn ? '我的账户' : '登录';
       trigger.setAttribute('aria-label', label);
       trigger.title = label;
-      if (trigger.classList.contains('login-desktop')) trigger.textContent = accountState.loggedIn ? '已登录' : '登录';
+      trigger.classList.toggle('is-authenticated', accountState.loggedIn);
+      if (accountState.loggedIn) {
+        trigger.innerHTML = `<span class="profile-avatar">${icon('user-round')}</span>`;
+        trigger.removeAttribute('aria-haspopup');
+        trigger.setAttribute('aria-controls', 'hengli-profile');
+        trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        trigger.innerHTML = trigger.classList.contains('login-desktop') ? '登录' : icon('circle-user-round');
+        trigger.setAttribute('aria-haspopup', 'dialog');
+        trigger.setAttribute('aria-controls', 'hengli-login');
+        trigger.removeAttribute('aria-expanded');
+      }
     });
+    profile.querySelector('#profile-phone').textContent = accountState.maskedPhone || '未提供';
+    const profileStatus = profile.querySelector('#profile-status');
+    profileStatus.classList.toggle('is-opened', accountState.opened);
+    profileStatus.querySelector('span').textContent = accountState.opened ? '已开户' : '未开户';
+    profileStatus.querySelector('img').hidden = !accountState.opened;
+    if (!accountState.loggedIn) closeProfile();
     const next = document.querySelector('[data-opening-next]');
     if (next) {
       next.querySelector('span').textContent = accountState.opened ? '联系我们' : '下一步';
@@ -180,9 +295,10 @@
   document.querySelector('[data-opening-next]')?.addEventListener('click', event => accountAction(event.currentTarget, true));
   renderAccountState();
   window.addEventListener('pageshow', () => {
+    closeProfile();
     try {
       const saved = JSON.parse(sessionStorage.getItem(previewStateKey));
-      accountState = { loggedIn: saved?.loggedIn === true, opened: saved?.loggedIn === true && saved?.opened === true };
+      accountState = normalizeAccountState(saved);
     } catch { /* Fall back to this page's state. */ }
     renderAccountState();
   });
@@ -322,6 +438,7 @@
 
   function openLogin(event, continuation = null) {
     if (dialog.open) return;
+    closeProfile();
     afterLogin = continuation;
     returnFocus = event.currentTarget;
     showMode('sms');
@@ -333,7 +450,10 @@
   }
 
   document.querySelectorAll('[data-login-open]').forEach(button => button.addEventListener('click', event => {
-    if (accountState.loggedIn) openService('session', event.currentTarget);
+    if (accountState.loggedIn) {
+      if (profileIsOpen() && profilePinned) closeProfile();
+      else openProfile(event.currentTarget, true);
+    }
     else openLogin(event);
   }));
   $('#auth-close').addEventListener('click', () => dialog.close());
@@ -428,18 +548,19 @@
     }
     if ((mode === 'reset' || mode === 'register') && (verifiedPhone !== phoneKey() || !newPasswordValid() || password.value !== confirm.value)) return;
     if (mode !== 'reset') {
-      saveAccountState({ loggedIn: true, opened: false });
+      const number = digits();
+      const prefix = number.length >= 10 ? 3 : 1;
+      const maskedPhone = `+${region.value} ${number.slice(0, prefix)}${'*'.repeat(number.length - prefix - 4)} ${number.slice(-4)}`;
+      saveAccountState({ loggedIn: true, opened: false, maskedPhone });
       const continuation = afterLogin;
       phone.value = '';
       password.value = '';
       confirm.value = '';
       code.value = '';
       codes.clear();
-      if (continuation && mode !== 'register') {
-        dialog.addEventListener('close', continuation, { once: true });
-        dialog.close();
-        return;
-      }
+      if (continuation) dialog.addEventListener('close', continuation, { once: true });
+      dialog.close();
+      return;
     }
     form.hidden = true;
     $('.auth-tabs').hidden = true;
@@ -467,8 +588,7 @@
   if (authParams.get('login') === '1' || authParams.get('register') === '1') {
     const trigger = [...document.querySelectorAll('[data-login-open]')].find(button => button.getClientRects().length);
     if (trigger) {
-      if (accountState.loggedIn) openService('session', trigger);
-      else {
+      if (!accountState.loggedIn) {
         openLogin({ currentTarget: trigger });
         if (authParams.get('register') === '1') showMode('register');
       }
